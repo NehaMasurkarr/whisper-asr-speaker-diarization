@@ -1,0 +1,26 @@
+from dataclasses import dataclass, field
+import os
+
+
+@dataclass(frozen=True)
+class Config:
+    whisper_model: str = field(default_factory=lambda: os.getenv("WHISPER_MODEL", "base.en"))
+    asr_device: str = field(default_factory=lambda: os.getenv("ASR_DEVICE", "auto"))
+    diarization_device: str = field(default_factory=lambda: os.getenv("DIARIZATION_DEVICE", "cpu"))
+    diarization_model: str = field(
+        default_factory=lambda: os.getenv(
+            "DIARIZATION_MODEL", "pyannote/speaker-diarization-community-1"
+        )
+    )
+    hf_token: str | None = field(default_factory=lambda: os.getenv("HF_TOKEN"), repr=False)
+    num_speakers: int | None = None
+    beam_size: int = 5
+    initial_prompt: str | None = None
+
+    def __post_init__(self):
+        if self.asr_device not in {"auto", "cpu", "mps", "cuda"}:
+            raise ValueError("Unsupported ASR device")
+        if self.diarization_device not in {"auto", "cpu", "mps", "cuda"}:
+            raise ValueError("Unsupported diarization device")
+        if self.beam_size < 1 or (self.num_speakers is not None and self.num_speakers < 1):
+            raise ValueError("Beam size and speaker count must be positive")

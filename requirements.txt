@@ -1,0 +1,2 @@
+# Direct dependencies are pinned in pyproject.toml; lock file captures transitive resolution.
+-e .[inference,dashboard,dev]
