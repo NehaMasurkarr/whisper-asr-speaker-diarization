@@ -25,3 +25,7 @@
 - GitHub network authentication verified; public repository already exists.
 - Real Whisper tiny.en CPU smoke/evaluation is running on seconds 30–60.
 - Optional TorchCodec decoder has a binary incompatibility with the selected PyTorch build. The implemented waveform input bypasses it; file-path decoding through upstream pyannote is not supported by this environment.
+- Expanded suite: 13 passed; Ruff lint/format passed.
+- Real CPU tiny.en ASR run completed on ES2002a seconds 30–60; JSON/TXT and evaluation artifacts generated under ignored outputs/.
+- Measured crop WER: 1.0714285714 (107.14%), 14 reference words, 3 substitutions, 2 deletions, 10 insertions. WER can exceed 100% due to insertions. This short crop is a smoke result, not corpus-wide quality.
+- DER is null for ASR-only output; no diarization score has been invented.

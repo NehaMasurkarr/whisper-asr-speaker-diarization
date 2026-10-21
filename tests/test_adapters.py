@@ -42,3 +42,58 @@ def test_config_token_redacted():
     assert "secret" not in repr(Config(hf_token="secret"))
     with pytest.raises(ValueError):
         Config(num_speakers=0)
+
+
+def test_pyannote_waveform_adapter_and_fallback(monkeypatch):
+    import numpy as np
+    import torch
+    from meeting_asr.types import Turn
+
+    moved = []
+    calls = []
+
+    class FakePipeline:
+        def to(self, target):
+            moved.append(str(target))
+
+        def __call__(self, waveform, **kwargs):
+            calls.append(kwargs)
+            assert waveform["waveform"].shape == (1, 16000)
+            assert waveform["sample_rate"] == 16000
+            if moved[-1] == "mps":
+                raise RuntimeError("unsupported")
+            annotation = SimpleNamespace(
+                itertracks=lambda **kw: iter(
+                    [(SimpleNamespace(start=0, end=1), None, "SPEAKER_00")]
+                )
+            )
+            return SimpleNamespace(speaker_diarization=annotation)
+
+    fake = FakePipeline()
+    monkeypatch.setitem(
+        sys.modules,
+        "pyannote.audio",
+        SimpleNamespace(Pipeline=SimpleNamespace(from_pretrained=lambda *a, **kw: fake)),
+    )
+    turns, actual = diarize(
+        np.zeros(16000, dtype="float32"),
+        Config(hf_token="private", diarization_device="mps", num_speakers=4),
+    )
+    assert actual == "cpu" and moved == ["mps", "cpu"]
+    assert turns == [Turn(0, 1, "SPEAKER_00")]
+    assert calls == [{"num_speakers": 4}] * 2
+    assert torch.is_tensor(torch.from_numpy(np.zeros(1)))
+
+
+def test_pyannote_access_error_redacts_upstream(monkeypatch):
+    def fail(*args, **kwargs):
+        raise RuntimeError("credential=supersecret")
+
+    monkeypatch.setitem(
+        sys.modules,
+        "pyannote.audio",
+        SimpleNamespace(Pipeline=SimpleNamespace(from_pretrained=fail)),
+    )
+    with pytest.raises(ModelAccessError) as error:
+        diarize(None, Config(hf_token="supersecret"))
+    assert "supersecret" not in str(error.value)
