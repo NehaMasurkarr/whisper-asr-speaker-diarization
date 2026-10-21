@@ -41,6 +41,7 @@ def run(
             "timestamp_origin": "crop",
             "whisper_model": config.whisper_model,
             "diarization_model": config.diarization_model,
+            "diarization_revision": config.diarization_revision,
             "asr_only": asr_only,
             "asr_device": asr_device,
             "diarization_device": diar_device,

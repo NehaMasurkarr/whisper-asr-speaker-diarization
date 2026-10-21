@@ -2,6 +2,7 @@
 
 import logging
 import os
+from math import isfinite
 from .config import Config
 from .types import Word, Turn
 
@@ -87,7 +88,11 @@ def diarize(audio, config: Config) -> tuple[list[Turn], str]:
 
     try:
         with torch.serialization.safe_globals(_checkpoint_types()):
-            pipeline = Pipeline.from_pretrained(config.diarization_model, token=config.hf_token)
+            pipeline = Pipeline.from_pretrained(
+                config.diarization_model,
+                token=config.hf_token,
+                revision=config.diarization_revision,
+            )
     except Exception as error:
         status = getattr(getattr(error, "response", None), "status_code", None)
         detail = f" ({type(error).__name__}{f', HTTP {status}' if status else ''})"
@@ -116,7 +121,13 @@ def diarize(audio, config: Config) -> tuple[list[Turn], str]:
         pipeline.to(torch.device(selected))
         output = pipeline(waveform, **kwargs)
     annotation = output.speaker_diarization
-    return [
-        Turn(float(s.start), float(s.end), str(label))
-        for s, _, label in annotation.itertracks(yield_label=True)
-    ], selected
+    duration = len(audio) / 16000
+    turns = []
+    for segment, _, label in annotation.itertracks(yield_label=True):
+        start, end = float(segment.start), float(segment.end)
+        if not (isfinite(start) and isfinite(end)):
+            raise ValueError("Diarization returned non-finite timestamps")
+        start, end = max(0.0, start), min(duration, end)
+        if end > start:
+            turns.append(Turn(start, end, str(label)))
+    return turns, selected

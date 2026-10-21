@@ -41,3 +41,7 @@
 - MPS crop inference succeeded at batch size 4 and exactly matched CPU DER (13.1396%). Automatic accelerator selection is now the default, with explicit device overrides preserved.
 - Upstream batches of 32 caused GPU memory pressure. Reduced batches to 4 for segmentation and embedding; added validation and adapter tests. All 20 tests and Ruff checks passed again.
 - Replaced the long full-meeting CPU diarization attempt with verified MPS inference; no incomplete CPU score is reported.
+- Full MPS inference completed. After clipping padded model timestamps to the real audio duration, output contains 353 turns, four speakers, 2,226 ASR word records, 210 overlap-marked words, and 40 unattributed words.
+- Full-meeting metrics: WER 36.3706%; DER 27.7472% (zero collar, overlap included, AMI v1.6.2 transcriber segments).
+- Controlled crop DER experiments: automatic count 13.1396%; known four speakers 10.3109%; full-meeting context 8.9958%, with ASR words and scoring region held fixed.
+- Added audio-bound clipping regression coverage and exact Hugging Face revision configuration. All 20 tests passed again; loading the pinned revision was verified on a synthetic waveform.

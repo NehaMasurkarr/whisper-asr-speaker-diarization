@@ -73,7 +73,10 @@ def test_pyannote_waveform_adapter_and_fallback(monkeypatch):
                 raise RuntimeError("unsupported")
             annotation = SimpleNamespace(
                 itertracks=lambda **kw: iter(
-                    [(SimpleNamespace(start=0, end=1), None, "SPEAKER_00")]
+                    [
+                        (SimpleNamespace(start=-0.01, end=1.1), None, "SPEAKER_00"),
+                        (SimpleNamespace(start=1.1, end=1.2), None, "PADDED"),
+                    ]
                 )
             )
             return SimpleNamespace(speaker_diarization=annotation)

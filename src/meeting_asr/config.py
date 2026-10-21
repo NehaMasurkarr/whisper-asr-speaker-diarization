@@ -12,6 +12,9 @@ class Config:
             "DIARIZATION_MODEL", "pyannote/speaker-diarization-community-1"
         )
     )
+    diarization_revision: str | None = field(
+        default_factory=lambda: os.getenv("DIARIZATION_REVISION")
+    )
     hf_token: str | None = field(default_factory=lambda: os.getenv("HF_TOKEN"), repr=False)
     diarization_batch_size: int = field(
         default_factory=lambda: int(os.getenv("DIARIZATION_BATCH_SIZE", "4"))
