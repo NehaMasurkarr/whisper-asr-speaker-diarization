@@ -1,47 +1,67 @@
 # Progress
 
+## Status
+
+Implementation, real-data inference, evaluation, experiments, local verification, and documentation are complete. Tested milestones have been pushed with Conventional Commits. Final GitHub checks are verified during publication.
+
 ## Completed milestones
 
-- Modular `src/meeting_asr` package: WAV/FLAC loading, resampling, Whisper word ASR, Community-1 diarization, overlap-aware attribution, JSON/TXT exports.
-- AMI v1.6.2 words and transcriber speech-segment parsing; WER and DER with explicit crop/UEM, collar, and overlap policy.
-- CLI, experiment runner, environment configuration, credential redaction, JSON logging, MPS acceleration with CPU fallback and failed-allocation cleanup.
-- Streamlit upload/playback, speaker timeline, readable transcripts, downloads, and evaluation displays.
-- 19 local tests passed; Ruff lint/format and pip dependency checks passed.
-- Linux GitHub Actions passed on Python 3.11 and 3.13; subsequent milestone checks monitored.
-- Repository configured and tested milestones pushed using Conventional Commits.
-- README with architecture, setup, methodology, limitations, and measured crop results; exact Mac dependency snapshot.
-- Audio verified at user's supplied Downloads path. Extracted annotations found at `/Users/neha/Downloads/ami_public_manual_1.6.2`; all eight ES2002a word/segment XMLs match the official archive byte for byte.
-- Hugging Face access resolved. PyTorch restricted-loading compatibility fixed with a scoped allowlist of three known pyannote metadata classes; unrestricted loading remains disabled.
-- Real full CLI crop (60–120 seconds): tiny.en WER 22.9167%; Community-1 DER 13.1396%, zero collar, overlap included.
-- ASR experiments on identical crops: base.en did not improve over tiny.en (60–120 seconds: 23.6111% versus 22.9167% WER).
-- Full-meeting base.en ASR completed: 1,272.64 seconds; 36.3706% WER; 280 substitutions, 536 deletions, 138 insertions; 2,623 normalized reference words.
+- Modular, type-hinted `src/meeting_asr` package with environment configuration and JSON logging.
+- OpenAI Whisper word ASR; Community-1 overlapping speaker diarization; timestamp alignment and speaker-attributed JSON/TXT exports.
+- Apple Silicon support: verified Whisper CPU fallback and real MPS diarization. Configurable CPU threads and bounded segmentation/embedding batches default to four.
+- Graceful missing-reference and model-access errors; token redaction; ignored/private `.env`; optional telemetry disabled by default.
+- AMI word and transcriber speech-segment parsing; normalized WER; optimal speaker-mapped DER with recorded scoring region, collar, and overlap policy.
+- CLI, accuracy experiment runner, and reusable Python API for future interviewer integration.
+- Streamlit audio upload/playback, consistent speaker timeline, readable transcript, downloads, and metric displays.
+- Reproducible dependency snapshot, pinned model-revision support, architecture/setup/methodology documentation, and GitHub Actions CI.
+- Regression coverage for speaker changes, overlaps, gaps, audio resampling/crops, model adapters, authentication, checkpoint loading, timestamp padding, metrics, CLI, and dashboard.
 
-## Current work
+## Verified real-data results
 
-- Full-meeting Community-1 diarization running on MPS with batch size 4; completed ASR is preserved for attribution.
-- Combine real stage outputs and evaluate full-meeting DER against the user's AMI speech-segment references.
-- Finish diarization experiment, final validation, documentation, and GitHub synchronization.
+Audio: `~/Downloads/amicorpus/ES2002a/audio/ES2002a.Mix-Headset.wav`.
+References: `~/Downloads/ami_public_manual_1.6.2`, verified byte-for-byte against the official AMI archive for all eight ES2002a words/segments files.
 
-## Current blockers
+- Complete duration: 1,272.64 seconds.
+- ASR: base.en on CPU after MPS fallback; diarization: Community-1 on MPS, batch size 4.
+- Full-meeting WER: **36.3706%** (280 substitutions, 536 deletions, 138 insertions; 2,623 normalized reference words).
+- Full-meeting DER: **27.7472%**, zero collar, overlap included, against AMI transcriber speech segments.
+- Four speakers, 353 bounded turns, 2,226 ASR word records, 210 overlap-marked words, 40 unattributed words.
+- Local deliverables: `outputs/ES2002a-full/transcript.json`, `transcript.txt`, and `metrics.json`.
+- Artifact bounds, source SHA-256, scoring duration, WER arithmetic, overlap/unknown-speaker rendering, and actual device metadata verified.
+- Model revision: `3533c8cf8e369892e6b79ff1bf80f7b0286a54ee`; loading this exact revision was also smoke-tested.
 
-- No authentication blocker remains.
-- Upstream TorchCodec binary is incompatible with the pinned PyTorch binary. The implemented SoundFile/SciPy waveform path bypasses it and real pyannote inference succeeds; upstream pyannote file-path decoding is not supported in this environment.
+## Accuracy experiments
 
-## Operational findings
+On seconds 60–120, using the same 144 normalized reference words:
 
-- Automatic Whisper MPS inference hit an unsupported runtime operation and successfully fell back to CPU on real audio.
-- Concurrent full-meeting jobs caused memory pressure on the 8 GB host. Redundant computation was stopped; remaining inference runs sequentially.
-- Initial CI missed CPU PyTorch; dependency configuration was fixed and both Python jobs passed.
-- Audio, annotations, model weights, credentials, and generated outputs remain excluded from Git.
-- Final engineering validation: 20 tests passed; Ruff lint/format and pip check passed.
-- Added a configurable four-thread CPU default, clear invalid-environment errors, finite crop validation, and consistent speaker colors in the dashboard.
-- Optional pyannote usage telemetry now defaults to disabled without overriding an explicit environment preference.
-- Full diarization remains active in neural-network convolution work; CPU use and stable memory were verified with a brief process profile.
+- ASR: tiny.en WER 22.9167%; base.en WER 23.6111%. Larger ASR did not improve this crop.
+- Diarization, holding ASR words fixed: automatic count DER 13.1396%; known four speakers DER 10.3109%; full-meeting context DER 8.9958%.
+- Known speaker count uses disclosed prior information; full context uses the whole recording before scoring the crop. These are single-meeting observations, not corpus-level benchmark claims.
+- CPU/batch-32 and MPS/batch-4 automatic-count crop DER matched exactly; no controlled speed claim is made.
 
-- MPS crop inference succeeded at batch size 4 and exactly matched CPU DER (13.1396%). Automatic accelerator selection is now the default, with explicit device overrides preserved.
-- Upstream batches of 32 caused GPU memory pressure. Reduced batches to 4 for segmentation and embedding; added validation and adapter tests. All 20 tests and Ruff checks passed again.
-- Replaced the long full-meeting CPU diarization attempt with verified MPS inference; no incomplete CPU score is reported.
-- Full MPS inference completed. After clipping padded model timestamps to the real audio duration, output contains 353 turns, four speakers, 2,226 ASR word records, 210 overlap-marked words, and 40 unattributed words.
-- Full-meeting metrics: WER 36.3706%; DER 27.7472% (zero collar, overlap included, AMI v1.6.2 transcriber segments).
-- Controlled crop DER experiments: automatic count 13.1396%; known four speakers 10.3109%; full-meeting context 8.9958%, with ASR words and scoring region held fixed.
-- Added audio-bound clipping regression coverage and exact Hugging Face revision configuration. All 20 tests passed again; loading the pinned revision was verified on a synthetic waveform.
+## Verification
+
+- `pytest -q`: **20 passed** after the final code changes.
+- Ruff lint and formatting checks passed.
+- `pip check`: no broken requirements.
+- GitHub Actions matrix covers Python 3.11 and 3.13; code milestones pass without tokens or model downloads.
+- No audio, annotations, model weights, credentials, or generated transcripts are tracked by Git.
+
+## Resolved issues
+
+- GitHub authentication repaired; regular tested commits pushed to the existing public repository.
+- Hugging Face gated access granted; restricted PyTorch checkpoint loading fixed using a scoped allowlist of the three known metadata classes.
+- CPU inference contention and upstream batch-32 GPU memory pressure addressed with sequential full inference and batch size 4.
+- Full diarization switched to verified MPS after the short GPU test succeeded; completed ASR was reused.
+- Padded pyannote turns clipped to audio bounds; one wholly out-of-bounds turn discarded. Metrics were unchanged because scoring already used the exact audio region.
+- Initial CI dependency omission fixed by installing CPU PyTorch and dashboard dependencies.
+
+## Blockers and limitations
+
+No blocker remains for the supported WAV/FLAC waveform pipeline. The optional upstream TorchCodec decoder is incompatible with the pinned PyTorch binary; SoundFile/SciPy waveform loading bypasses it and has completed real full-meeting inference. Direct upstream file-path decoding is outside the validated path.
+
+Whisper may miss simultaneous words; overlap detection does not separate voices. Speaker IDs are session-local. Results cover one headset-mix meeting, not a held-out AMI benchmark or a production-quality guarantee.
+
+## Optional next steps
+
+Evaluate additional held-out meetings, expand accuracy/model experiments, and build streaming/session orchestration for the future AI Interviewer using the existing module boundaries.
