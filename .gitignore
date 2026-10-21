@@ -24,3 +24,13 @@ models/
 *.safetensors
 *.rttm
 *.zip
+annotations/
+amicorpus/
+*.ckpt
+*.pth
+*.m4a
+*.ogg
+*.webm
+.coverage
+htmlcov/
+.streamlit/secrets.toml
