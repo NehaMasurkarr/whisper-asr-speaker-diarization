@@ -1,10 +1,10 @@
 import argparse
 from dataclasses import replace
 import json
-import logging
 from pathlib import Path
 from dotenv import load_dotenv
 from .config import Config
+from .logging import configure_logging
 from .pipeline import run, save
 from .evaluation import load_ami, evaluate
 
@@ -28,9 +28,7 @@ def main():
         "--experiment", action="store_true", help="Compare base.en/small.en and known speaker count"
     )
     args = parser.parse_args()
-    logging.basicConfig(
-        level=logging.INFO, format='{"level":"%(levelname)s","event":"%(message)s"}'
-    )
+    configure_logging()
     config = Config()
     config = replace(
         config,

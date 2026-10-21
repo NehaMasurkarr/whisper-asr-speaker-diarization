@@ -16,3 +16,13 @@ def test_cli_exports_asr_only(tmp_path, monkeypatch):
     )
     main()
     assert json.loads((tmp_path / "transcript.json").read_text())["words"][0]["text"] == "hello"
+
+
+def test_logging_escapes_message():
+    import logging
+    from meeting_asr.logging import JsonFormatter
+
+    record = logging.LogRecord("test", logging.INFO, "", 0, 'a "quoted"\nmessage', (), None)
+    output = JsonFormatter().format(record)
+    assert json.loads(output)["event"] == 'a "quoted"\nmessage'
+    assert len(output.splitlines()) == 1
