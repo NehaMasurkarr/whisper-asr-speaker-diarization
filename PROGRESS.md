@@ -36,3 +36,7 @@
 - base.en on the same 30–60 second crop measured WER 1.2142857143 (121.43%): larger model did not improve this sample.
 - Local suite expanded to 17 passing tests; JSON log escaping and credential-error redaction verified.
 - Initial Linux CI exposed a missing test dependency (PyTorch). Updated CI to install CPU PyTorch and dashboard dependencies; rerun pending.
+- Corrected Linux CI passed on Python 3.11 and 3.13 (run 39533266778).
+- Dashboard includes audio playback, metric cards, and transcript preservation when evaluation inputs are unavailable; 18 local tests now pass.
+- Found user's extracted AMI references in Downloads. All eight ES2002a words/segments XML files match the official archive byte for byte.
+- Full-meeting ASR and full-pipeline runs launched against the user's dataset. Updated model-access retry still failed; diagnosing the underlying exception without revealing credentials.

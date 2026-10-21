@@ -16,11 +16,13 @@ st.set_page_config(page_title="Meeting Speech Lab", layout="wide")
 st.title("Meeting Speech Lab")
 st.caption("Local Whisper transcription • pyannote speaker activity • AMI evaluation")
 upload = st.file_uploader("Upload meeting audio", type=["wav", "flac"])
+if upload is not None:
+    st.audio(upload)
 model = st.selectbox("Whisper model", ["base.en", "small.en", "medium.en", "tiny.en"])
 duration = st.number_input("Preview duration in seconds", min_value=1, max_value=7200, value=60)
 speakers = st.number_input("Known speakers (0 = automatic)", min_value=0, max_value=30, value=0)
 asr_only = st.checkbox("ASR only (no Hugging Face token required)")
-annotations = st.text_input("AMI word annotation directory (optional, local path)")
+annotations = st.text_input("AMI annotation directory (words and segments) (optional, local path)")
 meeting = st.text_input("AMI meeting identifier", value="ES2002a")
 st.info(
     "Audio stays on the machine hosting this app. Models may download on first use. "
@@ -39,13 +41,19 @@ if st.button("Transcribe", disabled=upload is None):
                 duration=float(duration),
                 asr_only=asr_only,
             )
+            transcript.metadata["audio_name"] = Path(upload.name).name
             st.session_state.transcript = transcript
             if annotations:
-                metrics = evaluate(transcript, *load_ami(Path(annotations).expanduser(), meeting))
-                if asr_only:
-                    metrics["der"] = None
-                    metrics["der_components_seconds"] = None
-                st.session_state.metrics = metrics
+                try:
+                    metrics = evaluate(
+                        transcript, *load_ami(Path(annotations).expanduser(), meeting)
+                    )
+                    if asr_only:
+                        metrics["der"] = None
+                        metrics["der_components_seconds"] = None
+                    st.session_state.metrics = metrics
+                except (OSError, ValueError, ImportError) as error:
+                    st.warning(f"Transcript is ready; evaluation unavailable: {error}")
     except Exception as error:
         st.error(f"Processing failed: {error}")
 if "transcript" in st.session_state:
@@ -67,6 +75,12 @@ if "transcript" in st.session_state:
     st.download_button("Download JSON", json.dumps(asdict(transcript), indent=2), "transcript.json")
     st.download_button("Download TXT", readable(transcript), "transcript.txt")
     if "metrics" in st.session_state:
-        st.json(st.session_state.metrics)
+        metrics = st.session_state.metrics
+        wer_column, der_column = st.columns(2)
+        wer_column.metric("WER", f"{metrics['wer']:.2%}")
+        der_column.metric(
+            "DER", "Unavailable" if metrics["der"] is None else f"{metrics['der']:.2%}"
+        )
+        st.json(metrics)
     else:
         st.caption("Evaluation unavailable: supply matching AMI annotations to calculate metrics.")
