@@ -46,6 +46,7 @@ def run(
             "diarization_device": diar_device,
             "beam_size": config.beam_size,
             "cpu_threads": config.cpu_threads,
+            "diarization_batch_size": config.diarization_batch_size,
             "num_speakers": config.num_speakers,
             "initial_prompt": config.initial_prompt,
             "packages": packages,

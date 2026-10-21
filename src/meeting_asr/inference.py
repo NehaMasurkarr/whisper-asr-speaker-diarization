@@ -100,6 +100,8 @@ def diarize(audio, config: Config) -> tuple[list[Turn], str]:
         raise ModelAccessError(
             "Diarization model access denied. Check model terms and token permissions."
         )
+    pipeline.embedding_batch_size = config.diarization_batch_size
+    pipeline.segmentation_batch_size = config.diarization_batch_size
     selected = device(config.diarization_device)
     kwargs = {"num_speakers": config.num_speakers} if config.num_speakers else {}
     waveform = {"waveform": torch.from_numpy(audio).unsqueeze(0), "sample_rate": 16000}

@@ -47,6 +47,8 @@ def test_config_token_redacted():
     assert "secret" not in repr(Config(hf_token="secret"))
     with pytest.raises(ValueError):
         Config(num_speakers=0)
+    with pytest.raises(ValueError):
+        Config(diarization_batch_size=0)
 
 
 def test_pyannote_waveform_adapter_and_fallback(monkeypatch):
@@ -63,6 +65,8 @@ def test_pyannote_waveform_adapter_and_fallback(monkeypatch):
 
         def __call__(self, waveform, **kwargs):
             calls.append(kwargs)
+            assert self.embedding_batch_size == 4
+            assert self.segmentation_batch_size == 4
             assert waveform["waveform"].shape == (1, 16000)
             assert waveform["sample_rate"] == 16000
             if moved[-1] == "mps":

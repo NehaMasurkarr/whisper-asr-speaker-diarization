@@ -50,9 +50,9 @@ Omit `--duration` for the full meeting. `--start` selects an offset in seconds. 
 
 ## Apple Silicon
 
-On the validated 8 GB M2 host, run inference jobs sequentially to avoid memory pressure. Release failed MPS allocations before CPU retry. Start with short crops before a full meeting. CPU inference defaults to four PyTorch threads; tune `TORCH_NUM_THREADS` for your host.
+On the validated 8 GB M2 host, run inference jobs sequentially to avoid memory pressure. Release failed MPS allocations before CPU retry. Start with short crops before a full meeting. CPU inference defaults to four PyTorch threads; tune `TORCH_NUM_THREADS` for your host. Diarization batches default to 4 instead of the upstream model configuration’s 32 to limit unified-memory pressure; tune `DIARIZATION_BATCH_SIZE` if needed.
 
-`ASR_DEVICE=auto` selects CUDA, MPS, then CPU. Whisper uses float32 on MPS and CPU; unsupported MPS runtime operations retry on CPU and record the actual device. `DIARIZATION_DEVICE=cpu` is the conservative default; set `mps` to try acceleration with the same fallback. Model downloads and unrelated CPU/CUDA failures are not silently retried. Larger Whisper models increase memory and latency; start with `base.en`. There is no claim that MPS is faster for every model or meeting.
+`ASR_DEVICE=auto` selects CUDA, MPS, then CPU. Whisper uses float32 on MPS and CPU; unsupported MPS runtime operations retry on CPU and record the actual device. `DIARIZATION_DEVICE=auto` selects an available accelerator with CPU fallback. MPS diarization was verified on the M2 with batch size 4 and matched CPU crop DER. Set `DIARIZATION_DEVICE=cpu` to reproduce the CPU baseline. Model downloads and unrelated CPU/CUDA failures are not silently retried. Larger Whisper models increase memory and latency; start with `base.en`. There is no claim that MPS is faster for every model or meeting.
 
 ## AMI annotations and evaluation
 

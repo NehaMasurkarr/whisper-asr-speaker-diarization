@@ -18,7 +18,7 @@
 
 ## Current work
 
-- Full-meeting Community-1 diarization running sequentially after ASR to fit the 8 GB M2 host.
+- Full-meeting Community-1 diarization running on MPS with batch size 4; completed ASR is preserved for attribution.
 - Combine real stage outputs and evaluate full-meeting DER against the user's AMI speech-segment references.
 - Finish diarization experiment, final validation, documentation, and GitHub synchronization.
 
@@ -37,3 +37,7 @@
 - Added a configurable four-thread CPU default, clear invalid-environment errors, finite crop validation, and consistent speaker colors in the dashboard.
 - Optional pyannote usage telemetry now defaults to disabled without overriding an explicit environment preference.
 - Full diarization remains active in neural-network convolution work; CPU use and stable memory were verified with a brief process profile.
+
+- MPS crop inference succeeded at batch size 4 and exactly matched CPU DER (13.1396%). Automatic accelerator selection is now the default, with explicit device overrides preserved.
+- Upstream batches of 32 caused GPU memory pressure. Reduced batches to 4 for segmentation and embedding; added validation and adapter tests. All 20 tests and Ruff checks passed again.
+- Replaced the long full-meeting CPU diarization attempt with verified MPS inference; no incomplete CPU score is reported.
