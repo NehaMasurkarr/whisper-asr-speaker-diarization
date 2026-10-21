@@ -44,3 +44,7 @@
 - Added a scoped allowlist for the three pyannote metadata classes actually present in the official segmentation and embedding checkpoints; unrestricted pickle loading remains disabled.
 - Added a regression test that loads custom checkpoint metadata only inside the scope and verifies cleanup afterward.
 - Stopped a redundant full-ASR process; retaining the original full-meeting ASR run for reuse with full diarization.
+- Real end-to-end CLI check succeeded on ES2002a seconds 60–120: tiny.en WER 22.9167%, Community-1 DER 13.1396% (zero collar, overlap included; AMI transcriber speech segments).
+- Full pipeline sample produced speaker-attributed JSON/TXT and actual evaluation metrics.
+- Host has 8 GB RAM; concurrent full-meeting jobs caused memory pressure. Stopped full diarization until ASR completes and switched to sequential inference.
+- Improved MPS fallback to exit the exception scope and release failed GPU tensors before loading the CPU model. Adapter regression tests: 7 passed.

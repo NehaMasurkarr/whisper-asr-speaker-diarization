@@ -54,7 +54,14 @@ def transcribe(audio, config: Config) -> tuple[list[Word], str]:
         if selected != "mps":
             raise
         log.warning("asr_mps_failed_retrying_cpu")
-        return run("cpu"), "cpu"
+    # Exit the exception scope first so its traceback releases failed MPS tensors.
+    import gc
+    import torch
+
+    gc.collect()
+    if torch.backends.mps.is_available():
+        torch.mps.empty_cache()
+    return run("cpu"), "cpu"
 
 
 def _checkpoint_types() -> list[type]:
