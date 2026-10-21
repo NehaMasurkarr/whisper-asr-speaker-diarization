@@ -99,5 +99,7 @@ def test_audio_invalid_and_export_empty(tmp_path):
         load_audio(path, start=-1)
     with pytest.raises(ValueError):
         load_audio(path, duration=0)
+    with pytest.raises(ValueError):
+        load_audio(path, duration=float("inf"))
     save(Transcript([], []), tmp_path / "out")
     assert json.loads((tmp_path / "out/transcript.json").read_text())["words"] == []

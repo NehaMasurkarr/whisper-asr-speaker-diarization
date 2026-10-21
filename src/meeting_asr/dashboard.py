@@ -6,6 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from dotenv import load_dotenv
 import plotly.graph_objects as go
+from plotly.colors import qualitative
 import streamlit as st
 from meeting_asr.config import Config
 from meeting_asr.pipeline import run, readable
@@ -59,13 +60,20 @@ if st.button("Transcribe", disabled=upload is None):
 if "transcript" in st.session_state:
     transcript = st.session_state.transcript
     fig = go.Figure()
+    palette = qualitative.Safe
+    colors = {
+        speaker: palette[i % len(palette)]
+        for i, speaker in enumerate(sorted({t.speaker for t in transcript.turns}))
+    }
     for turn in transcript.turns:
         fig.add_trace(
             go.Scatter(
                 x=[turn.start, turn.end],
                 y=[turn.speaker] * 2,
                 mode="lines",
-                line={"width": 14},
+                line={"width": 14, "color": colors[turn.speaker]},
+                name=turn.speaker,
+                hovertemplate="%{y}<br>%{x:.2f}s<extra></extra>",
                 showlegend=False,
             )
         )

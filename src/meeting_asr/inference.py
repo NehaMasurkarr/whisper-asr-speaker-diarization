@@ -24,6 +24,9 @@ def device(requested: str) -> str:
 
 def transcribe(audio, config: Config) -> tuple[list[Word], str]:
     import whisper
+    import torch
+
+    torch.set_num_threads(config.cpu_threads)
 
     selected = device(config.asr_device)
 
@@ -77,6 +80,9 @@ def diarize(audio, config: Config) -> tuple[list[Turn], str]:
             "Set HF_TOKEN and accept the diarization model's Hugging Face terms."
         )
     import torch
+
+    torch.set_num_threads(config.cpu_threads)
+    os.environ.setdefault("PYANNOTE_METRICS_ENABLED", "false")
     from pyannote.audio import Pipeline
 
     try:

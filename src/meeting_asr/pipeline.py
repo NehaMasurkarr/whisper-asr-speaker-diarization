@@ -45,6 +45,7 @@ def run(
             "asr_device": asr_device,
             "diarization_device": diar_device,
             "beam_size": config.beam_size,
+            "cpu_threads": config.cpu_threads,
             "num_speakers": config.num_speakers,
             "initial_prompt": config.initial_prompt,
             "packages": packages,

@@ -26,3 +26,14 @@ def test_logging_escapes_message():
     output = JsonFormatter().format(record)
     assert json.loads(output)["event"] == 'a "quoted"\nmessage'
     assert len(output.splitlines()) == 1
+
+
+def test_invalid_environment_is_actionable(monkeypatch, capsys):
+    import pytest
+
+    monkeypatch.setenv("TORCH_NUM_THREADS", "0")
+    monkeypatch.setattr(sys, "argv", ["meeting-asr", "input.wav"])
+    with pytest.raises(SystemExit) as error:
+        main()
+    assert error.value.code == 2
+    assert "TORCH_NUM_THREADS must be positive" in capsys.readouterr().err

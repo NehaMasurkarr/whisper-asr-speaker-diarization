@@ -50,7 +50,7 @@ Omit `--duration` for the full meeting. `--start` selects an offset in seconds. 
 
 ## Apple Silicon
 
-On the validated 8 GB M2 host, run inference jobs sequentially to avoid memory pressure. Release failed MPS allocations before CPU retry. Start with short crops before a full meeting.
+On the validated 8 GB M2 host, run inference jobs sequentially to avoid memory pressure. Release failed MPS allocations before CPU retry. Start with short crops before a full meeting. CPU inference defaults to four PyTorch threads; tune `TORCH_NUM_THREADS` for your host.
 
 `ASR_DEVICE=auto` selects CUDA, MPS, then CPU. Whisper uses float32 on MPS and CPU; unsupported MPS runtime operations retry on CPU and record the actual device. `DIARIZATION_DEVICE=cpu` is the conservative default; set `mps` to try acceleration with the same fallback. Model downloads and unrelated CPU/CUDA failures are not silently retried. Larger Whisper models increase memory and latency; start with `base.en`. There is no claim that MPS is faster for every model or meeting.
 
@@ -92,7 +92,7 @@ The runner compares `base.en` with automatic speaker count, `small.en` with auto
 
 ## Verified local results
 
-Local validation on Apple Silicon, Python 3.13, PyTorch 2.8.0: 19 tests passed; Ruff lint and formatting passed; `pip check` passed. Both tested Whisper models attempted MPS and completed through the CPU fallback. Model quality below is measured against AMI v1.6.2 word annotations, using the normalization described above.
+Local validation on Apple Silicon, Python 3.13, PyTorch 2.8.0: 20 tests passed; Ruff lint and formatting passed; `pip check` passed. Both tested Whisper models attempted MPS and completed through the CPU fallback. Model quality below is measured against AMI v1.6.2 word annotations, using the normalization described above.
 
 | ES2002a crop | Reference words | Whisper | WER | Substitutions / deletions / insertions |
 |---|---:|---|---:|---|
@@ -111,7 +111,9 @@ The optional TorchCodec binary installed by upstream pyannote is incompatible wi
 from pathlib import Path
 from meeting_asr.config import Config
 from meeting_asr.pipeline import run, save
+from dotenv import load_dotenv
 
+load_dotenv()
 result = run(Path("meeting.wav"), Config(), duration=60)
 save(result, Path("outputs/api"))
 ```
@@ -128,7 +130,7 @@ Tests use synthetic audio/references and mocked model adapters; optional metric 
 
 ## Data hygiene
 
-Datasets, recordings, model weights, virtual environments, generated outputs, and secrets are ignored. Audio is processed locally, but model acquisition contacts model hosts. Transcripts may contain sensitive meeting content: choose output locations and retention deliberately. The dashboard should remain bound to localhost. No dataset or generated transcript is included in this repository.
+Datasets, recordings, model weights, virtual environments, generated outputs, and secrets are ignored. Audio is processed locally, but model acquisition contacts model hosts. Optional pyannote usage telemetry defaults to disabled; an explicit `PYANNOTE_METRICS_ENABLED=true` overrides that default. Transcripts may contain sensitive meeting content: choose output locations and retention deliberately. The dashboard should remain bound to localhost. No dataset or generated transcript is included in this repository.
 
 ## Sources
 

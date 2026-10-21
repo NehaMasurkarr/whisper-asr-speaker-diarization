@@ -1,12 +1,16 @@
 from pathlib import Path
-from math import gcd
+from math import gcd, isfinite
 import numpy as np
 import soundfile as sf
 from scipy.signal import resample_poly
 
 
 def load_audio(path: Path, start: float = 0, duration: float | None = None) -> np.ndarray:
-    if start < 0 or (duration is not None and duration <= 0):
+    if (
+        not isfinite(start)
+        or start < 0
+        or (duration is not None and (not isfinite(duration) or duration <= 0))
+    ):
         raise ValueError("Invalid audio crop")
     with sf.SoundFile(path) as source:
         rate = source.samplerate

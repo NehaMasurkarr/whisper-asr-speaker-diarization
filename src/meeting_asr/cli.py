@@ -29,15 +29,15 @@ def main():
     )
     args = parser.parse_args()
     configure_logging()
-    config = Config()
-    config = replace(
-        config,
-        whisper_model=args.model or config.whisper_model,
-        num_speakers=args.speakers,
-        initial_prompt=args.prompt,
-    )
     try:
-        refs = load_ami(args.annotations, args.meeting) if args.annotations else None
+        config = Config()
+        config = replace(
+            config,
+            whisper_model=args.model or config.whisper_model,
+            num_speakers=args.speakers,
+            initial_prompt=args.prompt,
+        )
+        refs = load_ami(args.annotations.expanduser(), args.meeting) if args.annotations else None
         if args.experiment and (not refs or args.asr_only):
             raise ValueError("Experiments require annotations and full diarization")
         variants = [("baseline", config)]
