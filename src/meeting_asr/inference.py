@@ -57,6 +57,13 @@ def transcribe(audio, config: Config) -> tuple[list[Word], str]:
         return run("cpu"), "cpu"
 
 
+def _checkpoint_types() -> list[type]:
+    # Only known pyannote metadata classes are permitted during checkpoint loading.
+    from pyannote.audio.core.task import Specifications, Problem, Resolution
+
+    return [Specifications, Problem, Resolution]
+
+
 def diarize(audio, config: Config) -> tuple[list[Turn], str]:
     if not config.hf_token:
         raise ModelAccessError(
@@ -66,10 +73,15 @@ def diarize(audio, config: Config) -> tuple[list[Turn], str]:
     from pyannote.audio import Pipeline
 
     try:
-        pipeline = Pipeline.from_pretrained(config.diarization_model, token=config.hf_token)
-    except Exception:
+        with torch.serialization.safe_globals(_checkpoint_types()):
+            pipeline = Pipeline.from_pretrained(config.diarization_model, token=config.hf_token)
+    except Exception as error:
+        status = getattr(getattr(error, "response", None), "status_code", None)
+        detail = f" ({type(error).__name__}{f', HTTP {status}' if status else ''})"
         raise ModelAccessError(
-            "Unable to load diarization model. Check HF_TOKEN, model terms, and network."
+            "Unable to load diarization model"
+            + detail
+            + ". Check model access, dependencies, and network."
         ) from None
     if pipeline is None:
         raise ModelAccessError(

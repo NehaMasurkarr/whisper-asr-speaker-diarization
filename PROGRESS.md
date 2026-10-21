@@ -40,3 +40,7 @@
 - Dashboard includes audio playback, metric cards, and transcript preservation when evaluation inputs are unavailable; 18 local tests now pass.
 - Found user's extracted AMI references in Downloads. All eight ES2002a words/segments XML files match the official archive byte for byte.
 - Full-meeting ASR and full-pipeline runs launched against the user's dataset. Updated model-access retry still failed; diagnosing the underlying exception without revealing credentials.
+- Underlying model failure identified as PyTorch restricted checkpoint deserialization, after Hugging Face access was fixed.
+- Added a scoped allowlist for the three pyannote metadata classes actually present in the official segmentation and embedding checkpoints; unrestricted pickle loading remains disabled.
+- Added a regression test that loads custom checkpoint metadata only inside the scope and verifies cleanup afterward.
+- Stopped a redundant full-ASR process; retaining the original full-meeting ASR run for reuse with full diarization.

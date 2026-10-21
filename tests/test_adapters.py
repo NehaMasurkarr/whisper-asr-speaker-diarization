@@ -5,6 +5,11 @@ from meeting_asr.config import Config
 from meeting_asr.inference import transcribe, diarize, ModelAccessError
 
 
+@pytest.fixture(autouse=True)
+def checkpoint_metadata_stubs(monkeypatch):
+    monkeypatch.setattr("meeting_asr.inference._checkpoint_types", lambda: [])
+
+
 def test_whisper_mps_fallback(monkeypatch):
     devices = []
 
@@ -97,3 +102,45 @@ def test_pyannote_access_error_redacts_upstream(monkeypatch):
     with pytest.raises(ModelAccessError) as error:
         diarize(None, Config(hf_token="supersecret"))
     assert "supersecret" not in str(error.value)
+
+
+class CheckpointMetadata:
+    def __init__(self, value):
+        self.value = value
+
+
+def test_scoped_checkpoint_allowlist(tmp_path, monkeypatch):
+    import numpy as np
+    import torch
+
+    checkpoint = tmp_path / "metadata.pt"
+    torch.save({"metadata": CheckpointMetadata(7)}, checkpoint)
+    before = list(torch.serialization.get_safe_globals())
+
+    def load(*args, **kwargs):
+        restored = torch.load(checkpoint, weights_only=True)
+        assert restored["metadata"].value == 7
+        return SimpleNamespace(
+            to=lambda *a: None,
+            __call__=lambda *a, **kw: None,
+        )
+
+    class FakePipeline:
+        def to(self, target):
+            pass
+
+        def __call__(self, *args, **kwargs):
+            return SimpleNamespace(speaker_diarization=SimpleNamespace(itertracks=lambda **kw: []))
+
+    def factory(*args, **kwargs):
+        load()
+        return FakePipeline()
+
+    monkeypatch.setattr("meeting_asr.inference._checkpoint_types", lambda: [CheckpointMetadata])
+    monkeypatch.setitem(
+        sys.modules,
+        "pyannote.audio",
+        SimpleNamespace(Pipeline=SimpleNamespace(from_pretrained=factory)),
+    )
+    diarize(np.zeros(16000, dtype="float32"), Config(hf_token="test", diarization_device="cpu"))
+    assert torch.serialization.get_safe_globals() == before
